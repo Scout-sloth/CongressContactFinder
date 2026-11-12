@@ -34,7 +34,7 @@
     pre { padding: 0.75rem 1rem; overflow: auto; }
     iframe {
       width: 100%;
-      height: 6.5rem;
+      height: 780px;
       border: 1px solid var(--line);
       background: #fff;
     }
@@ -61,22 +61,23 @@
 <body>
   <main>
     <h1>CongressContactFinder demo</h1>
-    <p class="lead">Sample embeds that resolve a current member’s official contact website URL from bundled open data.</p>
+    <p class="lead">Sample embeds that resolve a current member’s official contact website, then try to show that live page in an iframe (with a fallback when the site blocks embedding).</p>
 
     <section>
       <h2>1. Drop-in block (data-name)</h2>
       <p>Sample name: <strong>Bernie Sanders</strong></p>
-      <div class="live" data-congress-contact data-name="Bernie Sanders"></div>
-      <pre>&lt;div data-congress-contact data-name="Bernie Sanders"&gt;&lt;/div&gt;
+      <div class="live" data-congress-contact data-name="Bernie Sanders" data-iframe-height="700"></div>
+      <pre>&lt;div data-congress-contact data-name="Bernie Sanders" data-iframe-height="700"&gt;&lt;/div&gt;
 &lt;script src="embed.js"&gt;&lt;/script&gt;</pre>
     </section>
 
     <section>
       <h2>2. iframe (query param)</h2>
       <iframe title="Congress contact for Alexandria Ocasio-Cortez"
-        src="embed.html?name=Alexandria%20Ocasio-Cortez"></iframe>
+        src="embed.html?name=Alexandria%20Ocasio-Cortez"
+        style="height:780px"></iframe>
       <pre>&lt;iframe src="/path/to/embed.html?name=Alexandria%20Ocasio-Cortez"
-  title="Congress contact" style="width:100%;height:7rem;border:0"&gt;&lt;/iframe&gt;</pre>
+  title="Congress contact" style="width:100%;height:780px;border:0"&gt;&lt;/iframe&gt;</pre>
     </section>
 
     <section>

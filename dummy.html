@@ -26,7 +26,7 @@
       background: linear-gradient(180deg, #eef4f8 0%, var(--paper) 100%);
     }
     .wrap {
-      max-width: 40rem;
+      max-width: 48rem;
       margin: 0 auto;
       padding: 1.5rem 1.25rem 2.5rem;
     }
@@ -67,16 +67,17 @@
       text-transform: uppercase;
       color: #7a6518;
     }
-    .embed-slot iframe {
+    .embed-slot iframe.host-embed {
       display: block;
       width: 100%;
-      height: 6.5rem;
+      height: 780px;
       border: 0;
       background: #fff;
     }
     .embed-slot .live {
       background: #fff;
-      padding: 0.35rem 0.25rem;
+      padding: 0.5rem 0.4rem 0.65rem;
+      min-height: 8rem;
     }
     footer {
       margin-top: 2rem;
@@ -103,8 +104,9 @@
       normal advocacy site — the yellow boxes mark where the contact embeds are plugged in.
     </p>
     <p>
-      Use the embeds below as a quick check that both the iframe and the drop-in script
-      resolve the right official contact URL for a few different current members.
+      Each embed looks up the member’s official contact URL, then tries to show that live
+      site inside the page. Many .gov sites block framing; when that happens the embed
+      shows a clear “Open contact form” button instead.
     </p>
 
     <h2>Start with your senators</h2>
@@ -117,6 +119,7 @@
     <div class="embed-slot" data-embed-example="iframe">
       <p class="label">Embed slot · iframe · Bernie Sanders</p>
       <iframe
+        class="host-embed"
         title="Congress contact for Bernie Sanders"
         src="embed.html?name=Bernie%20Sanders"></iframe>
     </div>
@@ -130,6 +133,7 @@
     <div class="embed-slot" data-embed-example="iframe">
       <p class="label">Embed slot · iframe · Maria Cantwell</p>
       <iframe
+        class="host-embed"
         title="Congress contact for Maria Cantwell"
         src="embed.html?name=Maria%20Cantwell"></iframe>
     </div>
@@ -144,7 +148,11 @@
     <!-- EMBED: data-attribute + embed.js -->
     <div class="embed-slot" data-embed-example="data-attribute">
       <p class="label">Embed slot · data-attribute · Alexandria Ocasio-Cortez</p>
-      <div class="live" data-congress-contact data-name="Alexandria Ocasio-Cortez"></div>
+      <div
+        class="live"
+        data-congress-contact
+        data-name="Alexandria Ocasio-Cortez"
+        data-iframe-height="720"></div>
     </div>
 
     <p>
@@ -155,7 +163,11 @@
     <!-- EMBED: data-attribute + embed.js -->
     <div class="embed-slot" data-embed-example="data-attribute">
       <p class="label">Embed slot · data-attribute · Mike Johnson</p>
-      <div class="live" data-congress-contact data-name="Mike Johnson"></div>
+      <div
+        class="live"
+        data-congress-contact
+        data-name="Mike Johnson"
+        data-iframe-height="720"></div>
     </div>
 
     <footer>
