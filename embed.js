@@ -284,6 +284,66 @@
     );
   }
 
+  function telHref(number) {
+    var digits = String(number || "").replace(/[^\d+]/g, "");
+    return digits ? "tel:" + digits : "";
+  }
+
+  function collectPhones(m) {
+    var out = [];
+    var seen = {};
+    function add(number, label) {
+      var raw = number ? String(number).trim() : "";
+      if (!raw) return;
+      var key = raw.replace(/\D+/g, "");
+      if (key.length < 7 || seen[key]) return;
+      seen[key] = true;
+      out.push({ number: raw, label: label ? String(label).trim() : "" });
+    }
+    var list = m && m.phones;
+    if (list && list.length) {
+      for (var i = 0; i < list.length; i++) {
+        var item = list[i];
+        if (!item) continue;
+        if (typeof item === "string") add(item, "");
+        else add(item.number, item.label || "");
+      }
+    } else if (m && m.phone) {
+      add(m.phone, "");
+    }
+    return out;
+  }
+
+  function phonesHtml(m) {
+    var phones = collectPhones(m);
+    if (!phones.length) return "";
+    var parts = [];
+    for (var i = 0; i < phones.length; i++) {
+      var p = phones[i];
+      var href = telHref(p.number);
+      if (!href) continue;
+      var label = p.label
+        ? '<span class="ccf-phone-label">' + escapeHtml(p.label) + "</span> "
+        : "";
+      parts.push(
+        '<span class="ccf-phone-item">' +
+          label +
+          '<a class="ccf-phone-link" href="' +
+          escapeHtml(href) +
+          '">' +
+          escapeHtml(p.number) +
+          "</a></span>"
+      );
+    }
+    if (!parts.length) return "";
+    return (
+      '<p class="ccf-phone"><span class="ccf-contact-label">Phone</span> ' +
+      '<span class="ccf-phone-list">' +
+      parts.join('<span class="ccf-phone-sep"> · </span>') +
+      "</span></p>"
+    );
+  }
+
   function socialLinksHtml(m) {
     var social = (m && m.social) || {};
     var parts = [];
@@ -312,6 +372,7 @@
     return (
       '<div class="ccf-contact-extras">' +
       emailHtml(m) +
+      phonesHtml(m) +
       socialLinksHtml(m) +
       "</div>"
     );
@@ -465,15 +526,17 @@
       ".ccf-name{margin:0 0 .35rem;font-weight:600}" +
       ".ccf-meta{font-weight:400;color:#555}" +
       ".ccf-contact-extras{margin:0 0 .75rem}" +
-      ".ccf-email,.ccf-social{margin:0 0 .3rem;font-size:.92em;line-height:1.4}" +
+      ".ccf-email,.ccf-phone,.ccf-social{margin:0 0 .3rem;font-size:.92em;line-height:1.4}" +
       ".ccf-contact-label{display:inline-block;min-width:3.4rem;color:#555;font-weight:600;margin-right:.35rem}" +
-      ".ccf-email-link{color:#0b57d0;font-weight:600;text-decoration:none}" +
-      ".ccf-email-link:hover{text-decoration:underline}" +
+      ".ccf-email-link,.ccf-phone-link{color:#0b57d0;font-weight:600;text-decoration:none}" +
+      ".ccf-email-link:hover,.ccf-phone-link:hover{text-decoration:underline}" +
       ".ccf-email-none{color:#666}" +
-      ".ccf-social-list{display:inline}" +
+      ".ccf-phone-list,.ccf-social-list{display:inline}" +
+      ".ccf-phone-item{white-space:nowrap}" +
+      ".ccf-phone-label{color:#555;font-weight:500}" +
+      ".ccf-phone-sep,.ccf-social-sep{color:#9aa3ad;font-weight:400}" +
       ".ccf-social-link{color:#0b57d0;font-weight:600;text-decoration:none}" +
       ".ccf-social-link:hover{text-decoration:underline}" +
-      ".ccf-social-sep{color:#9aa3ad;font-weight:400}" +
       ".ccf-frame-panel{margin:0}" +
       ".ccf-status{margin:0 0 .5rem;color:#555}" +
       ".ccf-site-frame{display:block;width:100%;border:1px solid #cfd6de;background:#fff;border-radius:2px}" +

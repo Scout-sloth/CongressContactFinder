@@ -18,7 +18,7 @@ Asset paths in the static files are relative (`embed.js`, `members.json`), so th
 |------|---------|
 | `embed.js` | Drop-in script: name → contact URL → embedded site (or fallback) |
 | `embed.html` | iframe-friendly host page |
-| `members.json` | Bundled current-member contact data (`frameAllowed`, `email`, `social`) |
+| `members.json` | Bundled current-member contact data (`frameAllowed`, `email`, `phone`/`phones`, `social`) |
 | `dummy.html` | Fake host page with member-name search and one dynamic contact embed |
 | `build_members.py` | Refresh `members.json` and probe framing headers |
 | `serve.ps1` | Tiny local HTTP server (avoids `file://` CORS) |
@@ -29,7 +29,7 @@ Asset paths in the static files are relative (`embed.js`, `members.json`), so th
 
 `https://unitedstates.github.io/congress-legislators/legislators-current.json`
 
-Social accounts come from the same project’s `legislators-social-media.json` (X/Twitter, Facebook, YouTube, Instagram, Mastodon when listed). Direct public email is included only when present in source data — most current members have contact forms instead, and the embed shows **No public email listed** rather than inventing an address.
+Social accounts come from the same project’s `legislators-social-media.json` (X/Twitter, Facebook, YouTube, Instagram, Mastodon when listed). Phone numbers come from each member’s current term `phone` (DC office) plus district-office phones from `legislators-district-offices.json` when listed — never invented; the embed omits the phone row if none are present. Direct public email is included only when present in source data — most current members have contact forms instead, and the embed shows **No public email listed** rather than inventing an address.
 
 For each member, the contact URL is `contact_form` when present, otherwise the official office `url` from their latest term.
 
@@ -117,7 +117,7 @@ On GitHub Pages (or any project subpath host), keep `embed.js` relative to the p
 ## Behavior
 
 1. Resolve the member from `members.json` by name (`contact_form` preferred, else official `url`).
-2. Under the member name, show email (`mailto:` when available, otherwise **No public email listed**) and any social profile links from the bundle.
+2. Under the member name, show email (`mailto:` when available, otherwise **No public email listed**), phone numbers (`tel:` links when present in the bundle; omitted if missing), and any social profile links.
 3. If `frameAllowed` is **false** (from the build-time header probe), skip the iframe and show the fallback immediately.
 4. If `frameAllowed` is **true** or unknown, load the contact URL in a tall iframe — but keep that iframe **hidden** until the load succeeds. On block / timeout, remove it and show the fallback.
 5. Fallback UI: a large **Open contact form / website** button (new tab), **Open in this window**, the resolved URL, and a short note that the site blocks embedding. The embed does **not** invent or mirror the form HTML.

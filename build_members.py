@@ -1,6 +1,7 @@
 """Build slim members.json from unitedstates/congress-legislators current data.
 
-Merges social accounts from legislators-social-media.json and any public email
+Merges social accounts from legislators-social-media.json, phone numbers from
+current terms (DC) plus district offices when listed, and any public email
 found in source data. Optionally probes each contact URL for X-Frame-Options /
 CSP frame-ancestors and stores frameAllowed on every member
 (true / false / null when unknown).
@@ -19,9 +20,13 @@ from pathlib import Path
 
 SOURCE_URL = "https://unitedstates.github.io/congress-legislators/legislators-current.json"
 SOCIAL_URL = "https://unitedstates.github.io/congress-legislators/legislators-social-media.json"
+DISTRICT_OFFICES_URL = (
+    "https://unitedstates.github.io/congress-legislators/legislators-district-offices.json"
+)
 PROJ = Path(__file__).resolve().parent
 USER_AGENT = "CongressContactFinder/1.0 (+local build; frame-ancestors probe)"
 FRAME_ANCESTORS_RE = re.compile(r"(?:^|;)\s*frame-ancestors\s+([^;]+)", re.I)
+PHONE_DIGITS_RE = re.compile(r"\D+")
 
 
 def normalize_space(value: str) -> str:
@@ -156,6 +161,65 @@ def extract_email(entry: dict, term: dict) -> str | None:
     return None
 
 
+def normalize_phone(value: object) -> str | None:
+    """Return a trimmed phone string from source data, or None — never invent."""
+    if not isinstance(value, str):
+        return None
+    number = value.strip()
+    return number or None
+
+
+def phone_dedupe_key(number: str) -> str:
+    return PHONE_DIGITS_RE.sub("", number)
+
+
+def district_office_label(office: dict) -> str | None:
+    city = (office.get("city") or "").strip()
+    state = (office.get("state") or "").strip()
+    if city and state:
+        return f"{city}, {state}"
+    if city:
+        return city
+    if state:
+        return state
+    return None
+
+
+def extract_phones(term: dict, district_offices: list[dict] | None) -> list[dict]:
+    """Collect DC + district phones from source only; dedupe by digits."""
+    phones: list[dict] = []
+    seen: set[str] = set()
+
+    def add(raw: object, label: str | None) -> None:
+        number = normalize_phone(raw)
+        if not number:
+            return
+        key = phone_dedupe_key(number)
+        if len(key) < 7 or key in seen:
+            return
+        seen.add(key)
+        item: dict[str, str] = {"number": number}
+        if label:
+            item["label"] = label
+        phones.append(item)
+
+    # Current term phone is the DC Capitol office number when present.
+    add(term.get("phone"), "DC office")
+    for office in district_offices or []:
+        add(office.get("phone"), district_office_label(office) or "District office")
+    return phones
+
+
+def load_district_offices_by_bioguide(path: Path) -> dict[str, list[dict]]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    by_bio: dict[str, list[dict]] = {}
+    for entry in data:
+        bio = (entry.get("id") or {}).get("bioguide")
+        if bio:
+            by_bio[bio] = entry.get("offices") or []
+    return by_bio
+
+
 def mastodon_url(handle: str) -> str | None:
     value = (handle or "").strip()
     if not value:
@@ -253,11 +317,14 @@ def main() -> None:
 
     raw_path = PROJ / "legislators-current.json"
     social_path = PROJ / "legislators-social-media.json"
+    district_path = PROJ / "legislators-district-offices.json"
     download_if_missing(raw_path, SOURCE_URL)
     download_if_missing(social_path, SOCIAL_URL)
+    download_if_missing(district_path, DISTRICT_OFFICES_URL)
 
     data = json.loads(raw_path.read_text(encoding="utf-8"))
     social_by_bio = load_social_by_bioguide(social_path)
+    district_by_bio = load_district_offices_by_bioguide(district_path)
     out_path = PROJ / "members.json"
     prior_frames = previous_frame_allowed(out_path) if args.skip_frame_probe else {}
 
@@ -265,6 +332,7 @@ def main() -> None:
     missing_url = 0
     with_email = 0
     with_social = 0
+    with_phone = 0
     for entry in data:
         name = entry.get("name") or {}
         terms = entry.get("terms") or []
@@ -287,6 +355,9 @@ def main() -> None:
         social = build_social_links(social_by_bio.get(bioguide))
         if social:
             with_social += 1
+        phones = extract_phones(term, district_by_bio.get(bioguide))
+        if phones:
+            with_phone += 1
         members.append(
             {
                 "name": official or normalize_space(f"{first} {last}"),
@@ -299,6 +370,8 @@ def main() -> None:
                 "websiteUrl": website or None,
                 "contactFormUrl": contact_form or None,
                 "email": email,
+                "phone": phones[0]["number"] if phones else None,
+                "phones": phones,
                 "social": social,
                 "frameAllowed": prior_frames.get(bioguide) if args.skip_frame_probe else None,
             }
@@ -317,9 +390,11 @@ def main() -> None:
         "source": "unitedstates/congress-legislators",
         "sourceUrl": SOURCE_URL,
         "socialSourceUrl": SOCIAL_URL,
+        "districtOfficesSourceUrl": DISTRICT_OFFICES_URL,
         "generated": date.today().isoformat(),
         "count": len(members),
         "withEmail": with_email,
+        "withPhone": with_phone,
         "withSocial": with_social,
         "frameProbe": not args.skip_frame_probe,
         "members": members,
@@ -327,7 +402,8 @@ def main() -> None:
     out_path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(
         f"Wrote {out_path} ({out_path.stat().st_size} bytes, {len(members)} members, "
-        f"with_email={with_email}, with_social={with_social}, missing_url={missing_url})"
+        f"with_email={with_email}, with_phone={with_phone}, with_social={with_social}, "
+        f"missing_url={missing_url})"
     )
 
 

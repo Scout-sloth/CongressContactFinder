@@ -15,6 +15,7 @@ Thumbs.db
 # Local build downloads / smoke junk
 legislators-current.json
 legislators-social-media.json
+legislators-district-offices.json
 *.log
 .smoke/
 tmp/
