@@ -53,17 +53,45 @@
     return best;
   }
 
-  function findMembers(data, query) {
+  function findMembers(data, query, options) {
+    options = options || {};
+    var minScore = typeof options.minScore === "number" ? options.minScore : 40;
+    var limit = typeof options.limit === "number" ? options.limit : 0;
     var scored = [];
     var members = (data && data.members) || [];
     for (var i = 0; i < members.length; i++) {
       var s = scoreMatch(query, members[i]);
-      if (s >= 40) scored.push({ score: s, member: members[i] });
+      if (s >= minScore) scored.push({ score: s, member: members[i] });
     }
     scored.sort(function (a, b) {
       return b.score - a.score || a.member.name.localeCompare(b.member.name);
     });
+    if (limit > 0) return scored.slice(0, limit);
     return scored;
+  }
+
+  /**
+   * Autocomplete helper: return ranked member matches for a partial query.
+   * Matches official name and aliases (first/last/full).
+   */
+  function suggest(query, options) {
+    options = options || {};
+    var limit = typeof options.limit === "number" ? options.limit : 8;
+    var minScore = typeof options.minScore === "number" ? options.minScore : 40;
+    return loadData(options).then(function (data) {
+      return findMembers(data, query, { minScore: minScore, limit: limit }).map(function (row) {
+        return {
+          score: row.score,
+          name: row.member.name,
+          chamber: row.member.chamber,
+          state: row.member.state,
+          party: row.member.party,
+          bioguide: row.member.bioguide,
+          frameAllowed: row.member.frameAllowed,
+          member: row.member,
+        };
+      });
+    });
   }
 
   function resolveDataUrl(base) {
@@ -467,6 +495,7 @@
 
   var api = {
     lookup: lookup,
+    suggest: suggest,
     mount: mount,
     loadData: loadData,
     readNameFromLocation: readNameFromLocation,

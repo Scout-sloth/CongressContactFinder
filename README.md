@@ -10,7 +10,7 @@ Embeddable, offline-friendly lookup of a current U.S. Congress member’s **offi
 | `embed.html` | iframe-friendly host page |
 | `members.json` | Bundled current-member contact data (includes `frameAllowed`) |
 | `demo.html` | Usage examples |
-| `dummy.html` | Fake host page with iframe + data-attribute embeds plugged in |
+| `dummy.html` | Fake host page with member-name search + sample data-attribute embeds |
 | `build_members.py` | Refresh `members.json` and probe framing headers |
 | `serve.ps1` | Tiny local HTTP server (avoids `file://` CORS) |
 
@@ -45,7 +45,21 @@ Browsers often block `fetch()` of `members.json` from `file://`. Use:
 Then open:
 
 - `http://127.0.0.1:8765/demo.html` — interactive usage examples
-- `http://127.0.0.1:8765/dummy.html` — fake host site with the embed snippets already plugged in
+- `http://127.0.0.1:8765/dummy.html` — fake host site with member search + sample embeds
+
+### Member search on `dummy.html`
+
+1. Open `dummy.html` over HTTP and hard-refresh if needed (Ctrl+F5).
+2. In **Search Congress members**, type a first name, last name, full name, or alias (e.g. `Bernie`, `Cantwell`, `Klobuchar`).
+3. Use ↑ / ↓ and Enter (or click) to pick a suggestion; Esc closes the list.
+4. The contact embed under the search box updates via `CongressContactFinder.mount` — iframe when `frameAllowed`, otherwise the open-button fallback.
+5. Two static sample embeds remain below for comparison.
+
+Programmatic autocomplete uses the same matcher:
+
+```js
+CongressContactFinder.suggest("Sanders", { limit: 8 }).then(console.log);
+```
 
 ## How to embed
 

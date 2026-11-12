@@ -13,6 +13,7 @@
       --accent: #1f5f8b;
       --mark: #fff6d6;
       --mark-border: #e6d48a;
+      --focus: #184a6c;
     }
     * { box-sizing: border-box; }
     body {
@@ -53,6 +54,96 @@
       margin: 1.75rem 0 0.65rem;
       font-size: 1.2rem;
     }
+    .search-panel {
+      margin: 0 0 1.5rem;
+      padding: 1rem 1rem 1.1rem;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 4px;
+    }
+    .search-panel .intro {
+      margin: 0 0 0.85rem;
+      font: 0.95rem/1.45 "Segoe UI", system-ui, sans-serif;
+      color: var(--muted);
+    }
+    .search-field {
+      position: relative;
+    }
+    .search-field label {
+      display: block;
+      margin: 0 0 0.4rem;
+      font: 600 0.8rem/1.3 "Segoe UI", system-ui, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .search-field input[type="search"] {
+      width: 100%;
+      padding: 0.7rem 0.8rem;
+      border: 1px solid #b7c3d0;
+      border-radius: 4px;
+      font: 1rem/1.3 "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background: #fff;
+    }
+    .search-field input[type="search"]:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+      border-color: var(--focus);
+    }
+    .search-hint {
+      margin: 0.45rem 0 0;
+      font: 0.85rem/1.4 "Segoe UI", system-ui, sans-serif;
+      color: var(--muted);
+    }
+    .suggest-list {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 2px);
+      z-index: 20;
+      margin: 0;
+      padding: 0.25rem 0;
+      list-style: none;
+      border: 1px solid #b7c3d0;
+      border-radius: 4px;
+      background: #fff;
+      box-shadow: 0 8px 20px rgba(36, 48, 65, 0.12);
+      max-height: 16rem;
+      overflow-y: auto;
+    }
+    .suggest-list[hidden] {
+      display: none !important;
+    }
+    .suggest-list li {
+      margin: 0;
+    }
+    .suggest-option {
+      display: block;
+      width: 100%;
+      padding: 0.55rem 0.8rem;
+      border: 0;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      font: 0.95rem/1.35 "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+    }
+    .suggest-option:hover,
+    .suggest-option[aria-selected="true"] {
+      background: #eef4f8;
+    }
+    .suggest-option .meta {
+      display: block;
+      margin-top: 0.15rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .suggest-empty {
+      padding: 0.65rem 0.8rem;
+      font: 0.9rem/1.4 "Segoe UI", system-ui, sans-serif;
+      color: var(--muted);
+    }
     .embed-slot {
       margin: 1rem 0 1.35rem;
       padding: 0.75rem 0.85rem 0.9rem;
@@ -71,6 +162,11 @@
       background: #fff;
       padding: 0.65rem 0.55rem 0.75rem;
       min-height: 4rem;
+    }
+    .embed-slot .live-placeholder {
+      margin: 0;
+      font: 0.95rem/1.45 "Segoe UI", system-ui, sans-serif;
+      color: var(--muted);
     }
     footer {
       margin-top: 2rem;
@@ -94,18 +190,52 @@
     <p>
       City councils across the region are asking residents to contact their senators and
       representatives before the next appropriations vote. This page is a stand-in for a
-      normal advocacy site — the yellow boxes mark where the contact embeds are plugged in.
-    </p>
-    <p>
-      Each embed looks up the member’s official contact URL. If framing is allowed, it shows
-      the live page in a tall iframe; if the site blocks embedding (most .gov offices), you
-      get a prominent “Open contact form / website” button instead — never a blank frame.
+      normal advocacy site — search for a member below, or scroll to the static embed samples.
     </p>
 
-    <h2>Members that usually allow framing</h2>
+    <h2>Find a member</h2>
+    <div class="search-panel" id="member-search">
+      <p class="intro">
+        Type a first name, last name, or full name. Pick a suggestion to load that member’s
+        contact embed (iframe when framing is allowed, otherwise the open-button fallback).
+      </p>
+      <div class="search-field">
+        <label for="member-query">Search Congress members</label>
+        <input
+          id="member-query"
+          type="search"
+          name="member"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="e.g. Bernie Sanders, Cantwell, Klobuchar…"
+          aria-autocomplete="list"
+          aria-controls="member-suggestions"
+          aria-expanded="false"
+          role="combobox"
+          aria-haspopup="listbox" />
+        <ul
+          id="member-suggestions"
+          class="suggest-list"
+          role="listbox"
+          aria-label="Matching members"
+          hidden></ul>
+      </div>
+      <p class="search-hint" id="search-status" aria-live="polite">
+        Suggestions appear as you type. Use ↑ ↓, Enter to select, Esc to close.
+      </p>
+    </div>
+
+    <div class="embed-slot" data-embed-example="search-result">
+      <p class="label" id="search-result-label">Search result · pick a member above</p>
+      <div class="live" id="search-embed">
+        <p class="live-placeholder">Your selected member’s contact embed will appear here.</p>
+      </div>
+    </div>
+
+    <h2>Static samples (unchanged drop-in embeds)</h2>
     <p>
-      Senator Sanders’ contact page typically has no X-Frame-Options / frame-ancestors block,
-      so the embed can show the live site in-page.
+      These keep the previous data-attribute demos: one member that usually allows framing,
+      and one that typically blocks it (open-button fallback).
     </p>
 
     <div class="embed-slot" data-embed-example="data-attribute">
@@ -117,40 +247,12 @@
         data-iframe-height="720"></div>
     </div>
 
-    <p>
-      Mitch McConnell’s contact page is another sample that often allows framing.
-    </p>
-
-    <div class="embed-slot" data-embed-example="data-attribute">
-      <p class="label">Embed slot · Mitch McConnell (usually embeds)</p>
-      <div
-        class="live"
-        data-congress-contact
-        data-name="Mitch McConnell"
-        data-iframe-height="720"></div>
-    </div>
-
-    <h2>Members that block framing (fallback UI)</h2>
-    <p>
-      Many offices send <code>X-Frame-Options: SAMEORIGIN</code>. These samples should show
-      the open-link fallback — not an empty white box.
-    </p>
-
     <div class="embed-slot" data-embed-example="data-attribute">
       <p class="label">Embed slot · Maria Cantwell (blocks embedding)</p>
       <div
         class="live"
         data-congress-contact
         data-name="Maria Cantwell"
-        data-iframe-height="720"></div>
-    </div>
-
-    <div class="embed-slot" data-embed-example="data-attribute">
-      <p class="label">Embed slot · Alexandria Ocasio-Cortez (blocks embedding)</p>
-      <div
-        class="live"
-        data-congress-contact
-        data-name="Alexandria Ocasio-Cortez"
         data-iframe-height="720"></div>
     </div>
 
@@ -161,5 +263,209 @@
   </main>
 
   <script src="embed.js"></script>
+  <script>
+    (function () {
+      var input = document.getElementById("member-query");
+      var list = document.getElementById("member-suggestions");
+      var status = document.getElementById("search-status");
+      var resultLabel = document.getElementById("search-result-label");
+      var embedHost = document.getElementById("search-embed");
+      var activeIndex = -1;
+      var currentItems = [];
+      var debounceTimer = null;
+      var requestId = 0;
+
+      function setExpanded(open) {
+        input.setAttribute("aria-expanded", open ? "true" : "false");
+        list.hidden = !open;
+      }
+
+      function clearSuggestions() {
+        list.innerHTML = "";
+        currentItems = [];
+        activeIndex = -1;
+        setExpanded(false);
+        input.removeAttribute("aria-activedescendant");
+      }
+
+      function optionId(i) {
+        return "member-option-" + i;
+      }
+
+      function formatMeta(item) {
+        var parts = [item.chamber, item.state, item.party].filter(Boolean);
+        return parts.join(" · ");
+      }
+
+      function renderSuggestions(items, query) {
+        list.innerHTML = "";
+        currentItems = items || [];
+        activeIndex = -1;
+        input.removeAttribute("aria-activedescendant");
+
+        if (!query) {
+          setExpanded(false);
+          status.textContent = "Suggestions appear as you type. Use ↑ ↓, Enter to select, Esc to close.";
+          return;
+        }
+
+        if (!currentItems.length) {
+          var empty = document.createElement("li");
+          empty.className = "suggest-empty";
+          empty.setAttribute("role", "presentation");
+          empty.textContent = "No members match “" + query + "”.";
+          list.appendChild(empty);
+          setExpanded(true);
+          status.textContent = "No matches.";
+          return;
+        }
+
+        currentItems.forEach(function (item, i) {
+          var li = document.createElement("li");
+          li.setAttribute("role", "presentation");
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "suggest-option";
+          btn.id = optionId(i);
+          btn.setAttribute("role", "option");
+          btn.setAttribute("aria-selected", "false");
+          btn.dataset.index = String(i);
+          btn.innerHTML =
+            "<span class=\"name\"></span><span class=\"meta\"></span>";
+          btn.querySelector(".name").textContent = item.name;
+          btn.querySelector(".meta").textContent = formatMeta(item);
+          btn.addEventListener("mousedown", function (e) {
+            e.preventDefault();
+            selectIndex(i);
+          });
+          li.appendChild(btn);
+          list.appendChild(li);
+        });
+
+        setExpanded(true);
+        status.textContent = currentItems.length + " suggestion" + (currentItems.length === 1 ? "" : "s");
+      }
+
+      function highlight(index) {
+        var options = list.querySelectorAll(".suggest-option");
+        if (!options.length) {
+          activeIndex = -1;
+          input.removeAttribute("aria-activedescendant");
+          return;
+        }
+        if (index < 0) index = options.length - 1;
+        if (index >= options.length) index = 0;
+        activeIndex = index;
+        for (var i = 0; i < options.length; i++) {
+          var selected = i === activeIndex;
+          options[i].setAttribute("aria-selected", selected ? "true" : "false");
+          if (selected) {
+            input.setAttribute("aria-activedescendant", options[i].id);
+            options[i].scrollIntoView({ block: "nearest" });
+          }
+        }
+      }
+
+      function selectIndex(index) {
+        var item = currentItems[index];
+        if (!item) return;
+        input.value = item.name;
+        clearSuggestions();
+        status.textContent = "Loading contact embed for " + item.name + "…";
+        resultLabel.textContent = "Search result · " + item.name;
+        CongressContactFinder.mount(embedHost, {
+          name: item.name,
+          iframeHeight: 720,
+        })
+          .then(function (result) {
+            if (result && result.match) {
+              status.textContent = "Loaded " + result.match.name + ".";
+            } else {
+              status.textContent = "No contact page found for that name.";
+            }
+          })
+          .catch(function () {
+            status.textContent = "Lookup failed — is the local server running?";
+          });
+      }
+
+      function runSuggest(raw) {
+        var query = String(raw || "").trim();
+        var id = ++requestId;
+        if (query.length < 1) {
+          clearSuggestions();
+          status.textContent = "Suggestions appear as you type. Use ↑ ↓, Enter to select, Esc to close.";
+          return;
+        }
+        CongressContactFinder.suggest(query, { limit: 8 })
+          .then(function (items) {
+            if (id !== requestId) return;
+            renderSuggestions(items, query);
+          })
+          .catch(function () {
+            if (id !== requestId) return;
+            clearSuggestions();
+            status.textContent = "Could not load member list — serve this folder over HTTP.";
+          });
+      }
+
+      input.addEventListener("input", function () {
+        window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(function () {
+          runSuggest(input.value);
+        }, 120);
+      });
+
+      input.addEventListener("keydown", function (e) {
+        var open = input.getAttribute("aria-expanded") === "true";
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (!open) {
+            runSuggest(input.value);
+            return;
+          }
+          highlight(activeIndex + 1);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (!open) return;
+          highlight(activeIndex - 1);
+        } else if (e.key === "Enter") {
+          if (open && activeIndex >= 0) {
+            e.preventDefault();
+            selectIndex(activeIndex);
+          } else if (open && currentItems.length === 1) {
+            e.preventDefault();
+            selectIndex(0);
+          } else if (String(input.value || "").trim()) {
+            e.preventDefault();
+            clearSuggestions();
+            resultLabel.textContent = "Search result · " + input.value.trim();
+            status.textContent = "Loading contact embed…";
+            CongressContactFinder.mount(embedHost, {
+              name: input.value.trim(),
+              iframeHeight: 720,
+            });
+          }
+        } else if (e.key === "Escape") {
+          if (open) {
+            e.preventDefault();
+            clearSuggestions();
+            status.textContent = "Suggestions closed.";
+          }
+        }
+      });
+
+      input.addEventListener("blur", function () {
+        window.setTimeout(function () {
+          clearSuggestions();
+        }, 150);
+      });
+
+      // Warm the member cache so the first keystroke feels instant.
+      if (window.CongressContactFinder && CongressContactFinder.loadData) {
+        CongressContactFinder.loadData().catch(function () { /* ignore until first search */ });
+      }
+    })();
+  </script>
 </body>
 </html>
