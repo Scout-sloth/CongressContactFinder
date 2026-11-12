@@ -2,6 +2,16 @@
 
 Embeddable, offline-friendly lookup of a current U.S. Congress member’s **official contact website**, then an attempt to **display that live page inside the embed** when framing is allowed.
 
+## Live demo (GitHub Pages)
+
+Served from `main` `/` (project site):
+
+- Main demo: https://scout-sloth.github.io/CongressContactFinder/dummy.html
+- Site root (redirects to demo): https://scout-sloth.github.io/CongressContactFinder/
+- Embed host: https://scout-sloth.github.io/CongressContactFinder/embed.html?name=Bernie%20Sanders
+
+Asset paths in the static files are relative (`embed.js`, `members.json`), so they resolve correctly under the `/CongressContactFinder/` project subpath.
+
 ## Files
 
 | File | Purpose |
@@ -69,7 +79,7 @@ Host pages should give the outer iframe enough height for a usable contact page 
 
 ```html
 <iframe
-  src="https://your-host/CongressContactFinder/embed.html?name=Bernie%20Sanders"
+  src="https://scout-sloth.github.io/CongressContactFinder/embed.html?name=Bernie%20Sanders"
   title="Congress contact"
   style="width:100%;height:780px;border:0"></iframe>
 ```
@@ -82,14 +92,20 @@ Host `embed.js` and `members.json` on the same origin, then:
 
 ```html
 <div data-congress-contact data-name="Alexandria Ocasio-Cortez" data-iframe-height="720"></div>
-<script src="/CongressContactFinder/embed.js"></script>
+<script src="embed.js"></script>
+```
+
+On GitHub Pages (or any project subpath host), keep `embed.js` relative to the page, or use the Pages URL:
+
+```html
+<script src="https://scout-sloth.github.io/CongressContactFinder/embed.js"></script>
 ```
 
 ### Programmatic
 
 ```html
 <div id="contact"></div>
-<script src="/CongressContactFinder/embed.js"></script>
+<script src="embed.js"></script>
 <script>
   CongressContactFinder.mount("#contact", {
     name: "Maria Cantwell",
