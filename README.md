@@ -9,7 +9,6 @@ Embeddable, offline-friendly lookup of a current U.S. Congress member’s **offi
 | `embed.js` | Drop-in script: name → contact URL → embedded site (or fallback) |
 | `embed.html` | iframe-friendly host page |
 | `members.json` | Bundled current-member contact data (`frameAllowed`, `email`, `social`) |
-| `demo.html` | Usage examples |
 | `dummy.html` | Fake host page with member-name search and one dynamic contact embed |
 | `build_members.py` | Refresh `members.json` and probe framing headers |
 | `serve.ps1` | Tiny local HTTP server (avoids `file://` CORS) |
@@ -46,8 +45,8 @@ Browsers often block `fetch()` of `members.json` from `file://`. Use:
 
 Then open:
 
-- `http://127.0.0.1:8765/demo.html` — interactive usage examples
 - `http://127.0.0.1:8765/dummy.html` — fake host site with member search and a dynamic contact embed
+- `http://127.0.0.1:8765/embed.html?name=Bernie%20Sanders` — iframe-friendly embed host
 
 ### Member search on `dummy.html`
 

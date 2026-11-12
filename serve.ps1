@@ -7,8 +7,8 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $root
 
 Write-Host "Serving $root at http://127.0.0.1:$Port/"
-Write-Host "Open http://127.0.0.1:$Port/demo.html"
-Write-Host "Or try the host mock: http://127.0.0.1:$Port/dummy.html"
+Write-Host "Open http://127.0.0.1:$Port/dummy.html"
+Write-Host "Or try the embed host: http://127.0.0.1:$Port/embed.html?name=Bernie%20Sanders"
 Write-Host "Ctrl+C to stop."
 
 python -m http.server $Port --bind 127.0.0.1
