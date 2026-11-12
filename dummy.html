@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neighborhood Voices — Contact Your Representatives</title>
+  <style>
+    :root {
+      --ink: #243041;
+      --muted: #5c6a7a;
+      --line: #d9e0e8;
+      --paper: #fbfcfd;
+      --accent: #1f5f8b;
+      --mark: #fff6d6;
+      --mark-border: #e6d48a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 17px/1.55 Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #eef4f8 0%, var(--paper) 100%);
+    }
+    .wrap {
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 2.5rem;
+    }
+    .site-name {
+      margin: 0;
+      font: 600 0.8rem/1.2 "Segoe UI", system-ui, sans-serif;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    h1 {
+      margin: 0.55rem 0 0.75rem;
+      font-size: 1.85rem;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+    .byline {
+      margin: 0 0 1.25rem;
+      font: 0.95rem/1.4 "Segoe UI", system-ui, sans-serif;
+      color: var(--muted);
+    }
+    p { margin: 0 0 1rem; }
+    h2 {
+      margin: 1.75rem 0 0.65rem;
+      font-size: 1.2rem;
+    }
+    .embed-slot {
+      margin: 1rem 0 1.35rem;
+      padding: 0.75rem 0.85rem 0.9rem;
+      border: 1px dashed var(--mark-border);
+      background: var(--mark);
+      border-radius: 4px;
+    }
+    .embed-slot .label {
+      margin: 0 0 0.55rem;
+      font: 600 0.75rem/1.3 "Segoe UI", system-ui, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #7a6518;
+    }
+    .embed-slot iframe {
+      display: block;
+      width: 100%;
+      height: 6.5rem;
+      border: 0;
+      background: #fff;
+    }
+    .embed-slot .live {
+      background: #fff;
+      padding: 0.35rem 0.25rem;
+    }
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      font: 0.9rem/1.4 "Segoe UI", system-ui, sans-serif;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="site-name">Neighborhood Voices</p>
+      <h1>Write your members of Congress about local transit funding</h1>
+      <p class="byline">A sample host page for trying CongressContactFinder embed snippets.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p>
+      City councils across the region are asking residents to contact their senators and
+      representatives before the next appropriations vote. This page is a stand-in for a
+      normal advocacy site — the yellow boxes mark where the contact embeds are plugged in.
+    </p>
+    <p>
+      Use the embeds below as a quick check that both the iframe and the drop-in script
+      resolve the right official contact URL for a few different current members.
+    </p>
+
+    <h2>Start with your senators</h2>
+    <p>
+      If you live in Vermont, one place to begin is Senator Sanders’ official contact page.
+      The iframe below loads the embed page with a name query parameter.
+    </p>
+
+    <!-- EMBED: iframe + embed.html?name=... -->
+    <div class="embed-slot" data-embed-example="iframe">
+      <p class="label">Embed slot · iframe · Bernie Sanders</p>
+      <iframe
+        title="Congress contact for Bernie Sanders"
+        src="embed.html?name=Bernie%20Sanders"></iframe>
+    </div>
+
+    <p>
+      Washington residents can reach Senator Cantwell the same way — a second iframe
+      sample so you can compare two members on one host page.
+    </p>
+
+    <!-- EMBED: iframe + embed.html?name=... -->
+    <div class="embed-slot" data-embed-example="iframe">
+      <p class="label">Embed slot · iframe · Maria Cantwell</p>
+      <iframe
+        title="Congress contact for Maria Cantwell"
+        src="embed.html?name=Maria%20Cantwell"></iframe>
+    </div>
+
+    <h2>House contacts via the drop-in script</h2>
+    <p>
+      Some partner sites prefer a plain HTML marker and a shared script tag instead of an
+      iframe. The next two slots use <code>data-congress-contact</code> plus
+      <code>embed.js</code>.
+    </p>
+
+    <!-- EMBED: data-attribute + embed.js -->
+    <div class="embed-slot" data-embed-example="data-attribute">
+      <p class="label">Embed slot · data-attribute · Alexandria Ocasio-Cortez</p>
+      <div class="live" data-congress-contact data-name="Alexandria Ocasio-Cortez"></div>
+    </div>
+
+    <p>
+      Another House example for a different state delegation — useful when a host page
+      lists more than one representative.
+    </p>
+
+    <!-- EMBED: data-attribute + embed.js -->
+    <div class="embed-slot" data-embed-example="data-attribute">
+      <p class="label">Embed slot · data-attribute · Mike Johnson</p>
+      <div class="live" data-congress-contact data-name="Mike Johnson"></div>
+    </div>
+
+    <footer>
+      Dummy host page only — not a real organization. After <code>.\serve.ps1</code>, open
+      <code>http://127.0.0.1:8765/dummy.html</code>.
+    </footer>
+  </main>
+
+  <script src="embed.js"></script>
+</body>
+</html>
