@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CongressContactFinder demo</title>
+  <style>
+    :root {
+      --ink: #1c2430;
+      --muted: #5a6573;
+      --line: #d7dde5;
+      --paper: #f7f8fa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 16px/1.5 "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(180deg, #eef2f6 0%, var(--paper) 40%, #fff 100%);
+      min-height: 100vh;
+    }
+    main { max-width: 44rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+    h1 { font-size: 1.5rem; margin: 0 0 0.35rem; }
+    p.lead { margin: 0 0 1.5rem; color: var(--muted); }
+    section { margin: 1.75rem 0; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+    h2 { font-size: 1.05rem; margin: 0 0 0.5rem; }
+    code, pre {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.85rem;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+    code { padding: 0.1em 0.35em; }
+    pre { padding: 0.75rem 1rem; overflow: auto; }
+    iframe {
+      width: 100%;
+      height: 6.5rem;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .live { margin-top: 0.75rem; padding: 0.85rem 1rem; background: #fff; border: 1px solid var(--line); }
+    label { display: block; font-size: 0.9rem; margin-bottom: 0.35rem; }
+    input[type="text"] {
+      width: 100%;
+      max-width: 24rem;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--line);
+      font: inherit;
+    }
+    button {
+      margin-top: 0.5rem;
+      padding: 0.45rem 0.85rem;
+      font: inherit;
+      cursor: pointer;
+      border: 1px solid #2f3b4a;
+      background: #2f3b4a;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>CongressContactFinder demo</h1>
+    <p class="lead">Sample embeds that resolve a current member’s official contact website URL from bundled open data.</p>
+
+    <section>
+      <h2>1. Drop-in block (data-name)</h2>
+      <p>Sample name: <strong>Bernie Sanders</strong></p>
+      <div class="live" data-congress-contact data-name="Bernie Sanders"></div>
+      <pre>&lt;div data-congress-contact data-name="Bernie Sanders"&gt;&lt;/div&gt;
+&lt;script src="embed.js"&gt;&lt;/script&gt;</pre>
+    </section>
+
+    <section>
+      <h2>2. iframe (query param)</h2>
+      <iframe title="Congress contact for Alexandria Ocasio-Cortez"
+        src="embed.html?name=Alexandria%20Ocasio-Cortez"></iframe>
+      <pre>&lt;iframe src="/path/to/embed.html?name=Alexandria%20Ocasio-Cortez"
+  title="Congress contact" style="width:100%;height:7rem;border:0"&gt;&lt;/iframe&gt;</pre>
+    </section>
+
+    <section>
+      <h2>3. Live lookup</h2>
+      <label for="name">Member name</label>
+      <input id="name" type="text" value="Mitch McConnell" />
+      <button type="button" id="go">Look up</button>
+      <div class="live" id="manual"></div>
+    </section>
+  </main>
+  <script src="embed.js"></script>
+  <script>
+    document.getElementById("go").addEventListener("click", function () {
+      CongressContactFinder.mount("#manual", {
+        name: document.getElementById("name").value
+      });
+    });
+    CongressContactFinder.mount("#manual", {
+      name: document.getElementById("name").value
+    });
+  </script>
+</body>
+</html>
