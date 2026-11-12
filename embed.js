@@ -448,7 +448,7 @@
         el.innerHTML =
           '<div class="ccf-root ccf-miss"><p class="ccf-empty">' +
           escapeHtml(err.message || "Lookup failed") +
-          "</p><p class="ccf-hint">Serve this folder over HTTP (file:// fetch of JSON is often blocked).</p></div>";
+          '</p><p class="ccf-hint">Serve this folder over HTTP (file:// fetch of JSON is often blocked).</p></div>';
         notifyHostHeight(el.querySelector(".ccf-root") || el);
         throw err;
       });
