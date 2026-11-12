@@ -1,6 +1,6 @@
 # CongressContactFinder
 
-Embeddable, offline-friendly lookup of a current U.S. Congress member’s **official contact website**, then an attempt to **display that live page inside the embed** (iframe).
+Embeddable, offline-friendly lookup of a current U.S. Congress member’s **official contact website**, then an attempt to **display that live page inside the embed** when framing is allowed.
 
 ## Files
 
@@ -8,10 +8,10 @@ Embeddable, offline-friendly lookup of a current U.S. Congress member’s **offi
 |------|---------|
 | `embed.js` | Drop-in script: name → contact URL → embedded site (or fallback) |
 | `embed.html` | iframe-friendly host page |
-| `members.json` | Bundled current-member contact data |
+| `members.json` | Bundled current-member contact data (includes `frameAllowed`) |
 | `demo.html` | Usage examples |
 | `dummy.html` | Fake host page with iframe + data-attribute embeds plugged in |
-| `build_members.py` | Refresh `members.json` from the public source |
+| `build_members.py` | Refresh `members.json` and probe framing headers |
 | `serve.ps1` | Tiny local HTTP server (avoids `file://` CORS) |
 
 ## Data source
@@ -22,10 +22,16 @@ Embeddable, offline-friendly lookup of a current U.S. Congress member’s **offi
 
 For each member, the contact URL is `contact_form` when present, otherwise the official office `url` from their latest term.
 
-Refresh the bundle:
+Refresh the bundle (also probes `X-Frame-Options` / CSP `frame-ancestors` and writes `frameAllowed`):
 
 ```powershell
 python .\build_members.py
+```
+
+Fast rebuild without network probes (sets `frameAllowed` to null):
+
+```powershell
+python .\build_members.py --skip-frame-probe
 ```
 
 ## Serve locally
@@ -45,7 +51,7 @@ Then open:
 
 ### iframe (query param)
 
-Host pages should give the outer iframe enough height for a usable contact page (~700–800px):
+Host pages should give the outer iframe enough height for a usable contact page (~700–800px) when framing works. `embed.html` also posts a resize message so host pages can shrink when only the fallback button is shown (`dummy.html` does this).
 
 ```html
 <iframe
@@ -81,12 +87,13 @@ Host `embed.js` and `members.json` on the same origin, then:
 ## Behavior
 
 1. Resolve the member from `members.json` by name (`contact_form` preferred, else official `url`).
-2. Always attempt to load that URL in a tall iframe inside the widget.
-3. If the member’s site refuses framing, show a clear fallback: a prominent **Open contact form** button (new tab), an **Open in this window** link, the URL, and a short note that the site blocks embedding. The embed does **not** invent or mirror the form HTML.
+2. If `frameAllowed` is **false** (from the build-time header probe), skip the iframe and show the fallback immediately.
+3. If `frameAllowed` is **true** or unknown, load the contact URL in a tall iframe — but keep that iframe **hidden** until the load succeeds. On block / timeout, remove it and show the fallback.
+4. Fallback UI: a large **Open contact form / website** button (new tab), **Open in this window**, the resolved URL, and a short note that the site blocks embedding. The embed does **not** invent or mirror the form HTML.
 
 ## Limitations
 
-- **Framing / embedding**: Many House and Senate `.gov` sites send `X-Frame-Options` or CSP `frame-ancestors` that block third-party iframes. When that happens, the fallback open-link UI is the honest result — the real page still opens via the button.
+- **Framing / embedding**: Many House and Senate `.gov` sites send `X-Frame-Options` or CSP `frame-ancestors` that block third-party iframes. `frameAllowed` is a best-effort probe at build time; runtime detection still covers unknowns and sites that change headers.
 - **Current members only** (House + Senate in the bundled snapshot).
 - **Name matching** is fuzzy (exact / contains / first+last). Nicknames and misspellings may miss; try the official full name.
 - **Contact vs website**: prefers `contact_form` when the legislator data includes one; otherwise uses the official site URL.

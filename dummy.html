@@ -70,14 +70,14 @@
     .embed-slot iframe.host-embed {
       display: block;
       width: 100%;
-      height: 780px;
+      height: 200px;
       border: 0;
       background: #fff;
     }
     .embed-slot .live {
       background: #fff;
       padding: 0.5rem 0.4rem 0.65rem;
-      min-height: 8rem;
+      min-height: 4rem;
     }
     footer {
       margin-top: 2rem;
@@ -104,20 +104,20 @@
       normal advocacy site — the yellow boxes mark where the contact embeds are plugged in.
     </p>
     <p>
-      Each embed looks up the member’s official contact URL, then tries to show that live
-      site inside the page. Many .gov sites block framing; when that happens the embed
-      shows a clear “Open contact form” button instead.
+      Each embed looks up the member’s official contact URL. If framing is allowed, it shows
+      the live page in a tall iframe; if the site blocks embedding (most .gov offices), you
+      get a prominent “Open contact form / website” button instead — never a blank frame.
     </p>
 
-    <h2>Start with your senators</h2>
+    <h2>Members that usually allow framing</h2>
     <p>
-      If you live in Vermont, one place to begin is Senator Sanders’ official contact page.
-      The iframe below loads the embed page with a name query parameter.
+      Senator Sanders’ contact page typically has no X-Frame-Options / frame-ancestors block,
+      so the embed can show the live site in-page.
     </p>
 
-    <!-- EMBED: iframe + embed.html?name=... -->
+    <!-- EMBED: iframe + embed.html?name=... (likely frameAllowed) -->
     <div class="embed-slot" data-embed-example="iframe">
-      <p class="label">Embed slot · iframe · Bernie Sanders</p>
+      <p class="label">Embed slot · iframe · Bernie Sanders (usually embeds)</p>
       <iframe
         class="host-embed"
         title="Congress contact for Bernie Sanders"
@@ -125,29 +125,38 @@
     </div>
 
     <p>
-      Washington residents can reach Senator Cantwell the same way — a second iframe
-      sample so you can compare two members on one host page.
+      Mitch McConnell’s contact page is another sample that often allows framing — shown
+      here via the drop-in script so you can compare iframe vs data-attribute hosts.
     </p>
 
-    <!-- EMBED: iframe + embed.html?name=... -->
+    <!-- EMBED: data-attribute + embed.js (likely frameAllowed) -->
+    <div class="embed-slot" data-embed-example="data-attribute">
+      <p class="label">Embed slot · data-attribute · Mitch McConnell (usually embeds)</p>
+      <div
+        class="live"
+        data-congress-contact
+        data-name="Mitch McConnell"
+        data-iframe-height="720"></div>
+    </div>
+
+    <h2>Members that block framing (fallback UI)</h2>
+    <p>
+      Many offices send <code>X-Frame-Options: SAMEORIGIN</code>. These samples should show
+      the open-link fallback — not an empty white box.
+    </p>
+
+    <!-- EMBED: iframe + embed.html?name=... (blocked) -->
     <div class="embed-slot" data-embed-example="iframe">
-      <p class="label">Embed slot · iframe · Maria Cantwell</p>
+      <p class="label">Embed slot · iframe · Maria Cantwell (blocks embedding)</p>
       <iframe
         class="host-embed"
         title="Congress contact for Maria Cantwell"
         src="embed.html?name=Maria%20Cantwell"></iframe>
     </div>
 
-    <h2>House contacts via the drop-in script</h2>
-    <p>
-      Some partner sites prefer a plain HTML marker and a shared script tag instead of an
-      iframe. The next two slots use <code>data-congress-contact</code> plus
-      <code>embed.js</code>.
-    </p>
-
-    <!-- EMBED: data-attribute + embed.js -->
+    <!-- EMBED: data-attribute + embed.js (blocked) -->
     <div class="embed-slot" data-embed-example="data-attribute">
-      <p class="label">Embed slot · data-attribute · Alexandria Ocasio-Cortez</p>
+      <p class="label">Embed slot · data-attribute · Alexandria Ocasio-Cortez (blocks embedding)</p>
       <div
         class="live"
         data-congress-contact
@@ -155,27 +164,26 @@
         data-iframe-height="720"></div>
     </div>
 
-    <p>
-      Another House example for a different state delegation — useful when a host page
-      lists more than one representative.
-    </p>
-
-    <!-- EMBED: data-attribute + embed.js -->
-    <div class="embed-slot" data-embed-example="data-attribute">
-      <p class="label">Embed slot · data-attribute · Mike Johnson</p>
-      <div
-        class="live"
-        data-congress-contact
-        data-name="Mike Johnson"
-        data-iframe-height="720"></div>
-    </div>
-
     <footer>
       Dummy host page only — not a real organization. After <code>.\serve.ps1</code>, open
-      <code>http://127.0.0.1:8765/dummy.html</code>.
+      <code>http://127.0.0.1:8765/dummy.html</code> and hard-refresh if the page was already open.
     </footer>
   </main>
 
+  <script>
+    // Resize outer host iframes when embed.html reports content height (fallback vs tall site).
+    window.addEventListener("message", function (event) {
+      var data = event.data;
+      if (!data || data.source !== "congress-contact-finder" || data.type !== "resize") return;
+      var frames = document.querySelectorAll("iframe.host-embed");
+      for (var i = 0; i < frames.length; i++) {
+        if (frames[i].contentWindow === event.source) {
+          var h = parseInt(data.height, 10);
+          if (h > 80) frames[i].style.height = h + "px";
+        }
+      }
+    });
+  </script>
   <script src="embed.js"></script>
 </body>
 </html>
