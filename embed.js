@@ -256,6 +256,67 @@
     );
   }
 
+  var SOCIAL_LABELS = {
+    twitter: "X / Twitter",
+    facebook: "Facebook",
+    youtube: "YouTube",
+    instagram: "Instagram",
+    mastodon: "Mastodon",
+  };
+
+  var SOCIAL_ORDER = ["twitter", "facebook", "youtube", "instagram", "mastodon"];
+
+  function emailHtml(m) {
+    var email = m && m.email ? String(m.email).trim() : "";
+    if (email) {
+      return (
+        '<p class="ccf-email"><span class="ccf-contact-label">Email</span> ' +
+        '<a class="ccf-email-link" href="mailto:' +
+        escapeHtml(email) +
+        '">' +
+        escapeHtml(email) +
+        "</a></p>"
+      );
+    }
+    return (
+      '<p class="ccf-email ccf-email-missing"><span class="ccf-contact-label">Email</span> ' +
+      '<span class="ccf-email-none">No public email listed</span></p>'
+    );
+  }
+
+  function socialLinksHtml(m) {
+    var social = (m && m.social) || {};
+    var parts = [];
+    for (var i = 0; i < SOCIAL_ORDER.length; i++) {
+      var key = SOCIAL_ORDER[i];
+      var url = social[key];
+      if (!url) continue;
+      parts.push(
+        '<a class="ccf-social-link" href="' +
+          escapeHtml(url) +
+          '" target="_blank" rel="noopener noreferrer">' +
+          escapeHtml(SOCIAL_LABELS[key] || key) +
+          "</a>"
+      );
+    }
+    if (!parts.length) return "";
+    return (
+      '<p class="ccf-social"><span class="ccf-contact-label">Social</span> ' +
+      '<span class="ccf-social-list">' +
+      parts.join('<span class="ccf-social-sep"> · </span>') +
+      "</span></p>"
+    );
+  }
+
+  function memberContactExtrasHtml(m) {
+    return (
+      '<div class="ccf-contact-extras">' +
+      emailHtml(m) +
+      socialLinksHtml(m) +
+      "</div>"
+    );
+  }
+
   function memberHeaderHtml(m) {
     var meta =
       m.chamber || m.state
@@ -268,7 +329,8 @@
       '<p class="ccf-name">' +
       escapeHtml(m.name) +
       meta +
-      "</p>"
+      "</p>" +
+      memberContactExtrasHtml(m)
     );
   }
 
@@ -400,8 +462,18 @@
     style.textContent =
       ".ccf-root{font:14px/1.45 system-ui,Segoe UI,sans-serif;color:#1a1a1a;max-width:52rem}" +
       ".ccf-label{margin:0 0 .25rem;font-size:.75rem;letter-spacing:.04em;text-transform:uppercase;color:#555}" +
-      ".ccf-name{margin:0 0 .65rem;font-weight:600}" +
+      ".ccf-name{margin:0 0 .35rem;font-weight:600}" +
       ".ccf-meta{font-weight:400;color:#555}" +
+      ".ccf-contact-extras{margin:0 0 .75rem}" +
+      ".ccf-email,.ccf-social{margin:0 0 .3rem;font-size:.92em;line-height:1.4}" +
+      ".ccf-contact-label{display:inline-block;min-width:3.4rem;color:#555;font-weight:600;margin-right:.35rem}" +
+      ".ccf-email-link{color:#0b57d0;font-weight:600;text-decoration:none}" +
+      ".ccf-email-link:hover{text-decoration:underline}" +
+      ".ccf-email-none{color:#666}" +
+      ".ccf-social-list{display:inline}" +
+      ".ccf-social-link{color:#0b57d0;font-weight:600;text-decoration:none}" +
+      ".ccf-social-link:hover{text-decoration:underline}" +
+      ".ccf-social-sep{color:#9aa3ad;font-weight:400}" +
       ".ccf-frame-panel{margin:0}" +
       ".ccf-status{margin:0 0 .5rem;color:#555}" +
       ".ccf-site-frame{display:block;width:100%;border:1px solid #cfd6de;background:#fff;border-radius:2px}" +

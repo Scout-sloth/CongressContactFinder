@@ -1,7 +1,9 @@
 """Build slim members.json from unitedstates/congress-legislators current data.
 
-Optionally probes each contact URL for X-Frame-Options / CSP frame-ancestors
-and stores frameAllowed on every member (true / false / null when unknown).
+Merges social accounts from legislators-social-media.json and any public email
+found in source data. Optionally probes each contact URL for X-Frame-Options /
+CSP frame-ancestors and stores frameAllowed on every member
+(true / false / null when unknown).
 """
 from __future__ import annotations
 
@@ -16,6 +18,7 @@ from datetime import date
 from pathlib import Path
 
 SOURCE_URL = "https://unitedstates.github.io/congress-legislators/legislators-current.json"
+SOCIAL_URL = "https://unitedstates.github.io/congress-legislators/legislators-social-media.json"
 PROJ = Path(__file__).resolve().parent
 USER_AGENT = "CongressContactFinder/1.0 (+local build; frame-ancestors probe)"
 FRAME_ANCESTORS_RE = re.compile(r"(?:^|;)\s*frame-ancestors\s+([^;]+)", re.I)
@@ -130,12 +133,115 @@ def probe_members(members: list[dict], workers: int = 24) -> None:
                 print(f"  {done}/{total} (allowed={allowed}, blocked={blocked}, unknown={unknown})")
 
 
+def download_if_missing(path: Path, url: str) -> None:
+    if path.exists():
+        return
+    print(f"Downloading {url}")
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        path.write_bytes(resp.read())
+
+
+def extract_email(entry: dict, term: dict) -> str | None:
+    """Return a public email only when present in source data — never invent one."""
+    for candidate in (
+        term.get("email"),
+        entry.get("email"),
+        (entry.get("id") or {}).get("email"),
+    ):
+        if isinstance(candidate, str):
+            value = candidate.strip()
+            if value and "@" in value:
+                return value
+    return None
+
+
+def mastodon_url(handle: str) -> str | None:
+    value = (handle or "").strip()
+    if not value:
+        return None
+    if value.startswith("http://") or value.startswith("https://"):
+        return value
+    # @user@instance.social → https://instance.social/@user
+    if value.startswith("@") and value.count("@") == 2:
+        _, user, instance = value.split("@", 2)
+        if user and instance:
+            return f"https://{instance}/@{user}"
+    return None
+
+
+def build_social_links(social: dict | None) -> dict[str, str]:
+    """Map congress-legislators social handles to absolute profile URLs."""
+    if not social:
+        return {}
+    links: dict[str, str] = {}
+
+    twitter = (social.get("twitter") or "").strip().lstrip("@")
+    if twitter:
+        links["twitter"] = f"https://x.com/{twitter}"
+
+    facebook = (social.get("facebook") or "").strip()
+    if facebook:
+        if facebook.startswith("http://") or facebook.startswith("https://"):
+            links["facebook"] = facebook
+        else:
+            links["facebook"] = f"https://www.facebook.com/{facebook}"
+
+    youtube_id = (social.get("youtube_id") or "").strip()
+    youtube = (social.get("youtube") or "").strip()
+    if youtube_id:
+        links["youtube"] = f"https://www.youtube.com/channel/{youtube_id}"
+    elif youtube:
+        if youtube.startswith("http://") or youtube.startswith("https://"):
+            links["youtube"] = youtube
+        elif youtube.startswith("UC") and len(youtube) >= 20:
+            links["youtube"] = f"https://www.youtube.com/channel/{youtube}"
+        else:
+            handle = youtube.lstrip("@")
+            links["youtube"] = f"https://www.youtube.com/@{handle}"
+
+    instagram = (social.get("instagram") or "").strip().lstrip("@")
+    if instagram:
+        links["instagram"] = f"https://www.instagram.com/{instagram}"
+
+    mastodon = mastodon_url(social.get("mastodon") or "")
+    if mastodon:
+        links["mastodon"] = mastodon
+
+    return links
+
+
+def load_social_by_bioguide(path: Path) -> dict[str, dict]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    by_bio: dict[str, dict] = {}
+    for entry in data:
+        bio = (entry.get("id") or {}).get("bioguide")
+        if bio:
+            by_bio[bio] = entry.get("social") or {}
+    return by_bio
+
+
+def previous_frame_allowed(path: Path) -> dict[str, bool | None]:
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    out: dict[str, bool | None] = {}
+    for member in data.get("members") or []:
+        bio = member.get("bioguide")
+        if bio and "frameAllowed" in member:
+            out[bio] = member.get("frameAllowed")
+    return out
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--skip-frame-probe",
         action="store_true",
-        help="Do not probe contact URLs; set frameAllowed to null for every member.",
+        help="Do not probe contact URLs; reuse prior frameAllowed when available, else null.",
     )
     parser.add_argument(
         "--probe-workers",
@@ -146,14 +252,19 @@ def main() -> None:
     args = parser.parse_args()
 
     raw_path = PROJ / "legislators-current.json"
-    if not raw_path.exists():
-        print(f"Downloading {SOURCE_URL}")
-        with urllib.request.urlopen(SOURCE_URL, timeout=120) as resp:
-            raw_path.write_bytes(resp.read())
+    social_path = PROJ / "legislators-social-media.json"
+    download_if_missing(raw_path, SOURCE_URL)
+    download_if_missing(social_path, SOCIAL_URL)
 
     data = json.loads(raw_path.read_text(encoding="utf-8"))
+    social_by_bio = load_social_by_bioguide(social_path)
+    out_path = PROJ / "members.json"
+    prior_frames = previous_frame_allowed(out_path) if args.skip_frame_probe else {}
+
     members = []
     missing_url = 0
+    with_email = 0
+    with_social = 0
     for entry in data:
         name = entry.get("name") or {}
         terms = entry.get("terms") or []
@@ -169,6 +280,13 @@ def main() -> None:
         official = normalize_space((name.get("official_full") or "").strip())
         first = (name.get("first") or "").strip()
         last = (name.get("last") or "").strip()
+        bioguide = (entry.get("id") or {}).get("bioguide")
+        email = extract_email(entry, term)
+        if email:
+            with_email += 1
+        social = build_social_links(social_by_bio.get(bioguide))
+        if social:
+            with_social += 1
         members.append(
             {
                 "name": official or normalize_space(f"{first} {last}"),
@@ -176,30 +294,41 @@ def main() -> None:
                 "chamber": "Senate" if term.get("type") == "sen" else "House",
                 "state": term.get("state"),
                 "party": term.get("party"),
-                "bioguide": (entry.get("id") or {}).get("bioguide"),
+                "bioguide": bioguide,
                 "contactUrl": contact_url,
                 "websiteUrl": website or None,
                 "contactFormUrl": contact_form or None,
-                "frameAllowed": None,
+                "email": email,
+                "social": social,
+                "frameAllowed": prior_frames.get(bioguide) if args.skip_frame_probe else None,
             }
         )
 
     if args.skip_frame_probe:
-        print("Skipping frame probe (--skip-frame-probe); frameAllowed=null for all.")
+        reused = sum(1 for m in members if m["frameAllowed"] is not None)
+        print(
+            f"Skipping frame probe (--skip-frame-probe); "
+            f"reused frameAllowed for {reused}/{len(members)} members."
+        )
     else:
         probe_members(members, workers=max(1, args.probe_workers))
 
     payload = {
         "source": "unitedstates/congress-legislators",
         "sourceUrl": SOURCE_URL,
+        "socialSourceUrl": SOCIAL_URL,
         "generated": date.today().isoformat(),
         "count": len(members),
+        "withEmail": with_email,
+        "withSocial": with_social,
         "frameProbe": not args.skip_frame_probe,
         "members": members,
     }
-    out = PROJ / "members.json"
-    out.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"Wrote {out} ({out.stat().st_size} bytes, {len(members)} members, missing_url={missing_url})")
+    out_path.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print(
+        f"Wrote {out_path} ({out_path.stat().st_size} bytes, {len(members)} members, "
+        f"with_email={with_email}, with_social={with_social}, missing_url={missing_url})"
+    )
 
 
 if __name__ == "__main__":
